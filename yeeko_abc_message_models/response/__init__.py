@@ -22,9 +22,11 @@ def exception_handler(func: Callable) -> Callable:
 
 class ResponseAbc(ABC, BaseModel):
     sender_uid: str
+    account_pid: str
     account_token: str
     message_list: List[dict] = []
     errors: List[dict] = []
+    debug: bool = False
 
     class Config:
         arbitrary_types_allowed = True
@@ -127,6 +129,8 @@ class ResponseAbc(ABC, BaseModel):
     def get_mid(self, body: Optional[dict]) -> Optional[str]:
         raise NotImplementedError
 
-    @abstractmethod
-    def add_error(self, error: dict, e: Optional[BaseException] = None):
-        raise NotImplementedError
+    def add_error(self, data: dict, e: Exception):
+        if self.debug:
+            print(data)
+            raise e
+        self.errors.append(data | {"error": str(e)})
