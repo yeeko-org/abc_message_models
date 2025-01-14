@@ -11,7 +11,8 @@ setup(
     url='https://github.com/yeeko-org/abc_message_models',
     packages=find_packages(),
     install_requires=[
-        "pydantic==2.10.5"
+        "pydantic==2.10.5",
+        "requests==2.32.3"
     ],
     python_requires='>=3.6',
 )
