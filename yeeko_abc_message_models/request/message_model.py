@@ -1,9 +1,7 @@
-
-from abc import abstractmethod
 import time
 
 from pydantic import BaseModel
-from typing import Any, Optional
+from typing import Optional
 
 
 class MessageBase(BaseModel):
@@ -48,9 +46,4 @@ class MediaMessage(MessageBase):
     filename: str | None = None
     voice: bool | None = None
 
-    origin_content: Any
     origin_name: str | None = None
-
-    @abstractmethod
-    def save_content(self):
-        raise NotImplementedError
