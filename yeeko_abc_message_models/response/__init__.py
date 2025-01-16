@@ -41,9 +41,9 @@ class ResponseAbc(ABC, BaseModel):
             text
         )
 
-    def message_text(self, message: str, fragment_id: Optional[int] = None):
+    def message_text(self, message: str, **kwargs):
         message = self._rep_text(message)
-        message_data = self.text_to_data(message, fragment_id=fragment_id)
+        message_data = self.text_to_data(message, **kwargs)
 
         message_data["_standard_message"] = json.loads(
             Message(body=message).model_dump_json())
@@ -51,11 +51,11 @@ class ResponseAbc(ABC, BaseModel):
 
     def message_multimedia(
         self, media_type: str, url_media: str = "", media_id: str = "", caption: str = "",
-        fragment_id: Optional[int] = None
+        **kwargs
     ):
         caption = self._rep_text(caption)
         message_data = self.multimedia_to_data(
-            url_media, media_id, media_type, caption, fragment_id=fragment_id)
+            url_media, media_id, media_type, caption, **kwargs)
         message_data["_standard_message"] = json.loads(MediaMessage(
             caption=caption, id=media_id, link=url_media).model_dump_json())
         self.message_list.append(message_data)
@@ -95,14 +95,14 @@ class ResponseAbc(ABC, BaseModel):
 
     @abstractmethod
     def text_to_data(
-        self, message: str, fragment_id: Optional[int] = None
+        self, message: str, **kwargs
     ) -> dict:
         raise NotImplementedError
 
     @abstractmethod
     def multimedia_to_data(
         self, url_media: str, media_id: str, media_type: str, caption: str,
-        fragment_id: Optional[int] = None
+        **kwargs
     ) -> dict:
         raise NotImplementedError
 

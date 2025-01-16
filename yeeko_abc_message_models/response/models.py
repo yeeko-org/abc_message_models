@@ -23,7 +23,6 @@ class Message(BaseModel):
     body: str
     header: Optional[str | Header] = None
     footer: Optional[str] = None
-    fragment_id: Optional[int] = None
 
     def replace_text(self, extra_values_data: dict):
         self.body = replace_parameter(extra_values_data, self.body)
@@ -37,6 +36,9 @@ class Message(BaseModel):
 
         if self.footer:
             self.footer = replace_parameter(extra_values_data, self.footer)
+
+    def get_context(self):
+        return {}
 
 
 class ReplyMessage(Message):

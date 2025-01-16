@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='yeeko_abc_message_models',
-    version='0.1.2',
+    version='0.1.3',
     description='models and abstract classes for creating and sending instant messages',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
