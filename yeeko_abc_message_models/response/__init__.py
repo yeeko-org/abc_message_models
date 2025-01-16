@@ -1,7 +1,6 @@
 import json
 
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
 from typing import Callable, List, Optional
 
 from yeeko_abc_message_models.utils.parameters import replace_parameter
@@ -20,7 +19,7 @@ def exception_handler(func: Callable) -> Callable:
     return wrapper
 
 
-class ResponseAbc(ABC, BaseModel):
+class ResponseAbc(ABC):
     sender_uid: str
     account_pid: str
     account_token: str
@@ -28,8 +27,15 @@ class ResponseAbc(ABC, BaseModel):
     errors: List[dict] = []
     debug: bool = False
 
-    class Config:
-        arbitrary_types_allowed = True
+    def __init__(
+        self, sender_uid: str, account_pid: str, account_token: str, debug=False
+    ) -> None:
+        self.sender_uid = sender_uid
+        self.account_pid = account_pid
+        self.account_token = account_token
+        self.debug = debug
+        self.errors = []
+        self.message_list = []
 
     @abstractmethod
     def _get_parameters(self) -> dict:
