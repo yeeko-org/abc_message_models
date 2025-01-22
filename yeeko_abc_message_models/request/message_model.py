@@ -1,7 +1,7 @@
 import time
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, Optional
 
 
 class MessageBase(BaseModel):
@@ -47,3 +47,4 @@ class MediaMessage(MessageBase):
     voice: bool | None = None
 
     origin_name: str | None = None
+    origin_content: Any | None = None

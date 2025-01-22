@@ -14,7 +14,7 @@ class WhatsAppResponse(ResponseAbc):
 
     def _base_data(
             self, type_str: str, body: Optional[dict] = None,
-            fragment_id: Optional[int] = None
+            **kwargs
     ) -> dict:
         phone = self.sender_uid
 
@@ -25,22 +25,21 @@ class WhatsAppResponse(ResponseAbc):
             "messaging_product": "whatsapp",
             "to": phone,
             "type": type_str,
-            type_str: body,
-            "_fragment_id": fragment_id,
+            type_str: body
         }
 
     def text_to_data(
-            self, message: str, fragment_id: Optional[int] = None
+            self, message: str, **kwargs
     ) -> dict:
         if not isinstance(message, str):
             raise ValueError(
                 f'Message {message} must be a string, not {type(message)}'
             )
-        return self._base_data("text", {"body": message}, fragment_id)
+        return self._base_data("text", {"body": message}, **kwargs)
 
     def multimedia_to_data(
         self, url_media: str, media_id: str, media_type: str, caption: Optional[str] = None,
-        fragment_id: Optional[int] = None
+        **kwargs
     ) -> dict:
         if media_type not in ["image", "video", "audio", "file", "document", "sticker"]:
             raise ValueError(
@@ -57,7 +56,7 @@ class WhatsAppResponse(ResponseAbc):
         if url_media:
             body["link"] = url_media
 
-        return self._base_data(media_type, body, fragment_id)
+        return self._base_data(media_type, body, **kwargs)
 
     def _message_to_data(
             self, message: Message, header_supp_media=False
@@ -109,7 +108,7 @@ class WhatsAppResponse(ResponseAbc):
         })
 
         whatsapp_data_message = self._base_data(
-            "interactive", interactive, fragment_id=message.fragment_id)
+            "interactive", interactive, **message.get_context())
 
         whatsapp_data_message["uuid_list"] = [
             button.payload for button in message.get_only_buttons()[:3]]
@@ -144,7 +143,7 @@ class WhatsAppResponse(ResponseAbc):
             }
         })
         return self._base_data(
-            "interactive", interactive, fragment_id=message.fragment_id)
+            "interactive", interactive, **message.get_context())
 
     def many_buttons_to_data(self, message: ReplyMessage) -> dict:
 
@@ -165,7 +164,7 @@ class WhatsAppResponse(ResponseAbc):
         })
 
         whatsapp_data_message = self._base_data(
-            "interactive", interactive, fragment_id=message.fragment_id)
+            "interactive", interactive, **message.get_context())
 
         whatsapp_data_message["uuid_list"] = []
 

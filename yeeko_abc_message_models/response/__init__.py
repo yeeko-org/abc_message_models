@@ -1,7 +1,6 @@
 import json
 
 from abc import ABC, abstractmethod
-from pydantic import BaseModel
 from typing import Callable, List, Optional
 
 from yeeko_abc_message_models.utils.parameters import replace_parameter
@@ -20,7 +19,7 @@ def exception_handler(func: Callable) -> Callable:
     return wrapper
 
 
-class ResponseAbc(ABC, BaseModel):
+class ResponseAbc(ABC):
     sender_uid: str
     account_pid: str
     account_token: str
@@ -28,8 +27,15 @@ class ResponseAbc(ABC, BaseModel):
     errors: List[dict] = []
     debug: bool = False
 
-    class Config:
-        arbitrary_types_allowed = True
+    def __init__(
+        self, sender_uid: str, account_pid: str, account_token: str, debug=False
+    ) -> None:
+        self.sender_uid = sender_uid
+        self.account_pid = account_pid
+        self.account_token = account_token
+        self.debug = debug
+        self.errors = []
+        self.message_list = []
 
     @abstractmethod
     def _get_parameters(self) -> dict:
@@ -41,9 +47,9 @@ class ResponseAbc(ABC, BaseModel):
             text
         )
 
-    def message_text(self, message: str, fragment_id: Optional[int] = None):
+    def message_text(self, message: str, **kwargs):
         message = self._rep_text(message)
-        message_data = self.text_to_data(message, fragment_id=fragment_id)
+        message_data = self.text_to_data(message, **kwargs)
 
         message_data["_standard_message"] = json.loads(
             Message(body=message).model_dump_json())
@@ -51,11 +57,11 @@ class ResponseAbc(ABC, BaseModel):
 
     def message_multimedia(
         self, media_type: str, url_media: str = "", media_id: str = "", caption: str = "",
-        fragment_id: Optional[int] = None
+        **kwargs
     ):
         caption = self._rep_text(caption)
         message_data = self.multimedia_to_data(
-            url_media, media_id, media_type, caption, fragment_id=fragment_id)
+            url_media, media_id, media_type, caption, **kwargs)
         message_data["_standard_message"] = json.loads(MediaMessage(
             caption=caption, id=media_id, link=url_media).model_dump_json())
         self.message_list.append(message_data)
@@ -95,14 +101,14 @@ class ResponseAbc(ABC, BaseModel):
 
     @abstractmethod
     def text_to_data(
-        self, message: str, fragment_id: Optional[int] = None
+        self, message: str, **kwargs
     ) -> dict:
         raise NotImplementedError
 
     @abstractmethod
     def multimedia_to_data(
         self, url_media: str, media_id: str, media_type: str, caption: str,
-        fragment_id: Optional[int] = None
+        **kwargs
     ) -> dict:
         raise NotImplementedError
 
