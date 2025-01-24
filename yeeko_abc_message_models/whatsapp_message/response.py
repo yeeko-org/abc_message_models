@@ -7,10 +7,28 @@ from yeeko_abc_message_models.response.models import (
     Message, Section, SectionsMessage, ReplyMessage)
 
 FACEBOOK_API_VERSION = os.getenv('FACEBOOK_API_VERSION', 'v13.0')
+try:
+    FACEBOOK_SECTIONS_LIMIT = int(os.getenv('FACEBOOK_SECTIONS_LIMIT', 10))
+except ValueError:
+    FACEBOOK_SECTIONS_LIMIT = 10
+
+try:
+    FACEBOOK_SECTIONS_BUTTONS_LIMIT = int(
+        os.getenv('FACEBOOK_SECTIONS_BUTTONS_LIMIT', 10))
+except ValueError:
+    FACEBOOK_SECTIONS_BUTTONS_LIMIT = 10
 
 
 class WhatsAppResponse(ResponseAbc):
     base_url: str = f'https://graph.facebook.com/{FACEBOOK_API_VERSION}'
+
+    def _get_parameters(self) -> dict:
+        if not hasattr(self, "parameters"):
+            self.parameters = {}
+        return self.parameters
+
+    def set_parameters(self, parameters: dict):
+        self.parameters = parameters
 
     def _base_data(
             self, type_str: str, body: Optional[dict] = None,
@@ -115,7 +133,7 @@ class WhatsAppResponse(ResponseAbc):
 
         return whatsapp_data_message
 
-    def _section_to_data(self, section: Section) -> dict:
+    def _section_to_data(self, section: Section, max_buttons=10) -> dict:
         return {
             "title": section.title,
             "rows": [
@@ -124,15 +142,18 @@ class WhatsAppResponse(ResponseAbc):
                     "title": item.title,
                     "description": item.description or "",
                 }
-                for item in section.buttons[:10]
+                for item in section.buttons[:max_buttons]
             ]
         }
 
     def sections_to_data(self, message: SectionsMessage) -> dict:
 
         sections = []
-        for section in message.sections[:10]:
-            sections.append(self._section_to_data(section))
+        max_buttons = FACEBOOK_SECTIONS_BUTTONS_LIMIT
+        for section in message.sections[:FACEBOOK_SECTIONS_LIMIT]:
+            section_data = self._section_to_data(section, max_buttons)
+            sections.append(section_data)
+            max_buttons -= len(section_data["rows"])
 
         interactive = self._message_to_data(message)
         interactive.update({
@@ -184,7 +205,7 @@ class WhatsAppResponse(ResponseAbc):
 
     def send_message(
         self, message_data: dict
-    ):
+    ) -> dict:
 
         url = f"{self.base_url}/{self.account_pid}/messages"
         headers = {
@@ -194,6 +215,18 @@ class WhatsAppResponse(ResponseAbc):
 
         response = requests.post(url, headers=headers, json=message_data)
         try:
-            response_body = response.json()
+            return response.json()
         except ValueError:
-            response_body = {"body": response.text}
+            return {"body": response.text}
+
+    def _send_message(self, message: dict) -> dict:
+        # clean following attributes
+        _ = message.pop("uuid_list", [])
+        _ = message.get("_standard_message", None)
+
+        try:
+            return self.send_message(message)
+        except Exception as e:
+            self.add_error(
+                {"method": "send_message",  "message": message}, e=e)
+            return {"error": str(e)}
