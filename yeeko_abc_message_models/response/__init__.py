@@ -26,9 +26,12 @@ class ResponseAbc(ABC):
     message_list: List[dict] = []
     errors: List[dict] = []
     debug: bool = False
+    clean_list_after_send: bool = True
+    response_send_messages = []
+    auto_send: bool = False
 
     def __init__(
-        self, sender_uid: str, account_pid: str, account_token: str, debug=False
+        self, sender_uid: str, account_pid: str, account_token: str, debug=False, auto_send=False
     ) -> None:
         self.sender_uid = sender_uid
         self.account_pid = account_pid
@@ -36,6 +39,8 @@ class ResponseAbc(ABC):
         self.debug = debug
         self.errors = []
         self.message_list = []
+        self.response_send_messages = []
+        self.auto_send = auto_send
 
     @abstractmethod
     def _get_parameters(self) -> dict:
@@ -54,6 +59,8 @@ class ResponseAbc(ABC):
         message_data["_standard_message"] = json.loads(
             Message(body=message).model_dump_json())
         self.message_list.append(message_data)
+        if self.auto_send:
+            self.send_messages()
 
     def message_multimedia(
         self, media_type: str, url_media: str = "", media_id: str = "", caption: str = "",
@@ -65,6 +72,8 @@ class ResponseAbc(ABC):
         message_data["_standard_message"] = json.loads(MediaMessage(
             caption=caption, id=media_id, link=url_media).model_dump_json())
         self.message_list.append(message_data)
+        if self.auto_send:
+            self.send_messages()
 
     def message_few_buttons(self, message: ReplyMessage):
         message.replace_text(self._get_parameters())
@@ -73,6 +82,8 @@ class ResponseAbc(ABC):
         message_data["_standard_message"] = json.loads(
             message.model_dump_json())
         self.message_list.append(message_data)
+        if self.auto_send:
+            self.send_messages()
 
     def message_many_buttons(self, message: ReplyMessage):
         message.replace_text(self._get_parameters())
@@ -81,6 +92,8 @@ class ResponseAbc(ABC):
         message_data["_standard_message"] = json.loads(
             message.model_dump_json())
         self.message_list.append(message_data)
+        if self.auto_send:
+            self.send_messages()
 
     def message_sections(self, message: SectionsMessage):
         message.replace_text(self._get_parameters())
@@ -89,13 +102,21 @@ class ResponseAbc(ABC):
         message_data["_standard_message"] = json.loads(
             message.model_dump_json())
         self.message_list.append(message_data)
+        if self.auto_send:
+            self.send_messages()
 
     def send_messages(self):
+        if self.clean_list_after_send:
+            self.response_send_messages = []
+
         for message in self.message_list:
-            self._send_message(message)
+            response_data = self._send_message(message)
+            self.response_send_messages.append((response_data, message))
+        if self.clean_list_after_send:
+            self.message_list = []
 
     @abstractmethod
-    def _send_message(self, message: dict):
+    def _send_message(self, message: dict) -> dict:
         # pre-clean the message to avoid sending unnecessary data and record events
         raise NotImplementedError
 
@@ -127,7 +148,7 @@ class ResponseAbc(ABC):
     @abstractmethod
     def send_message(
         self, message_data: dict
-    ):
+    ) -> dict:
         # send the message to the platform
         raise NotImplementedError
 
