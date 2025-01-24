@@ -1,10 +1,11 @@
-# Modelos y clases Genéricos para mensajería
 
-La siguiente librería esta pensada como base para la implementación otras librerías de mensajería instantánea y poder aplicar el principio de sustitución de liskov en sistemas de conversacionales o mensajería instantáneas
+# Modelos y Clases Genéricas para Mensajería
+
+La siguiente librería está diseñada como base para la implementación de otras librerías de mensajería instantánea, permitiendo aplicar el principio de sustitución de Liskov en sistemas conversacionales o de mensajería instantánea.
 
 ## Request
 
-Centrado en la recepción de mensajes, ofrece una clase abstracta RequestAbc con la declaración de métodos para ser implementados, donde su inicialización de como resultado clases representativas organizadas a 3 niveles: pagina, usuario y mensajes
+Enfocada en la recepción de mensajes, esta librería ofrece una clase abstracta `RequestAbc` con la declaración de métodos para ser implementados. Su inicialización da como resultado clases representativas organizadas en tres niveles: página, usuario y mensajes.
 
     InputAccount:
         raw_data: dict
@@ -18,35 +19,49 @@ Centrado en la recepción de mensajes, ofrece una clase abstracta RequestAbc con
         statuses: List[]
             EventMessage
 
-Lo normal será que llegue una pagina, con un usuario y un mensaje, pero se debe contemplar que de los datos pueden llegar varias paginas, con varios usuarios y cada usuario con varios mensajes
+Normalmente, se espera que llegue una página con un usuario y un mensaje. Sin embargo, también es necesario contemplar escenarios en los que se reciban varias páginas, con múltiples usuarios, y cada usuario con varios mensajes.
 
-Además de que tambien pueden llegar referencias a mensajes sin usuarios, comúnmente estados, como vistos o leídos
+Además, es posible recibir referencias a mensajes sin usuarios (comúnmente estados, como vistos o leídos).
 
 ## Response
 
-Para la construcción de mensajes, se diseñaron modelos que puedan representar la mayoría de las opciones ofrecidas por los distintos servicios.
+Para la construcción de mensajes, se diseñaron modelos capaces de representar la mayoría de las opciones ofrecidas por distintos servicios de mensajería:
 
-- Message: para texto simple(body) o compuesto por header, body y footer
-- ReplyMessage: Message base que incluyen botones
-- SectionsMessage: Mensajes seccionados para opciones como carruseles
-- MediaMessage: imágenes o archivos
+- **Message**: Para texto simple (`body`) o compuesto por `header`, `body` y `footer`.
+- **ReplyMessage**: Mensaje base que incluye botones.
+- **SectionsMessage**: Mensajes seccionados, útiles para opciones como carruseles.
+- **MediaMessage**: Para imágenes o archivos.
 
-Tambien se ofrece una clase ResponseAbc, con la declaración de métodos que simplifiquen el envio de mensajes, aunque los limites son sugerencias para estandarizar, están atados a las capacidades y limitaciones de cada servicio de mensajería.
+Además, se ofrece la clase `ResponseAbc`, que declara métodos que simplifican el envío de mensajes. Aunque los límites son sugerencias para estandarizar, están atados a las capacidades y restricciones de cada servicio de mensajería.
 
-- message_text(str): envio de texto simple
-- message_multimedia(url): envio de multimedia
-- message_few_buttons(ReplyMessage): envio máximo de 3 botones
-- message_many_buttons(ReplyMessage): envio máximo de 10 botones
-- message_sections(SectionsMessage): envio máximo de 10 secciones con 10 botones máximo en total
+- `message_text(str)`: Envío de texto simple.
+- `message_multimedia(url)`: Envío de contenido multimedia.
+- `message_few_buttons(ReplyMessage)`: Envío con un máximo de 3 botones.
+- `message_many_buttons(ReplyMessage)`: Envío con un máximo de 10 botones.
+- `message_sections(SectionsMessage)`: Envío con un máximo de 10 secciones, con un total de hasta 10 botones.
 
-La política de envio sugerida es declara cada clase por sesión de usuario y acumular los mensajes esperados para poder mandarlos en un solo paso, de esta forma se pueden calcular errores de redundancia o envio de mensajes con retrasos de tiempo
+La política de envío sugerida consiste en declarar cada clase por sesión de usuario, acumulando los mensajes esperados para enviarlos en un solo paso. Esto permite calcular errores de redundancia o retrasos en el envío de mensajes.
 
 ## Utils
 
-replace_parameter es un método que remplaza variables en textos con el formato {variable}, apoyado de ResponseAbc._get_parameters() donde podremos declarar una forma de obtener las variables de cada usuario, y asi poder mandarle mensajes mas personalizados utilizando textos genéricos.
+`replace_parameter` es un método que reemplaza variables en textos con el formato `{variable}`. Este método se apoya en `ResponseAbc._get_parameters()`, que permite declarar una forma de obtener las variables de cada usuario. Así, es posible enviar mensajes más personalizados utilizando textos genéricos.
 
-## Whastapp
+## WhatsApp
 
-Ejemplo de implementación de las clases request.py y response.py, con envio de mensajes reales si se tienen las configuraciones correctas y un token con permisos autorizados.
+Se incluye un ejemplo de implementación de las clases `request.py` y `response.py`, con envío de mensajes reales si se tienen las configuraciones correctas y un token con permisos autorizados.
 
-ejemplos de su utilización en la siguiente wiki.
+Puedes encontrar ejemplos de su uso en la [wiki correspondiente](https://github.com/yeeko-org/abc_message_models/wiki/WhatsApp-Message-Response).
+
+## Instalación
+
+Para instalar la librería, se recomienda utilizar la herramienta `pip` para agregarla a los recursos de Python o a un entorno virtual:
+
+    pip install git+https://github.com/yeeko-org/abc_message_models
+
+Recuerda que, si utilizas `pip freeze`, el paquete se establecerá en un hash específico del repositorio. Si no necesitas una versión exacta, basta con eliminar el hash y guardar el requerimiento.
+
+Para actualizar la librería, puedes usar el parámetro `--upgrade`:
+
+    pip install --upgrade git+https://github.com/yeeko-org/abc_message_models
+
+También puedes descargar el repositorio y utilizar las aplicaciones que necesites. Ten en cuenta que `whatsapp_message` es una implementación que requiere las dependencias `request`, `response` y `utils`.
