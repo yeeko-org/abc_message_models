@@ -1,17 +1,26 @@
 from abc import ABC, abstractmethod
 from typing import Any, List
+
+from pydantic import BaseModel
 from .message_model import (
     InteractiveMessage, EventMessage, MediaMessage, TextMessage
 )
 
 
+class SenderData(BaseModel):
+    raw_data: dict
+    name: str | None = None
+    email: str | None = None
+    phone: str | None = None
+
+
 class InputSender:
     uid: str
-    sender_data: dict
+    sender_data: SenderData
     messages: List[TextMessage | InteractiveMessage |
                    EventMessage | MediaMessage]
 
-    def __init__(self, uid: str, sender_data: dict) -> None:
+    def __init__(self, uid: str, sender_data: SenderData) -> None:
         self.uid = uid
         self.sender_data = sender_data
         self.messages = []
@@ -34,7 +43,7 @@ class InputAccount:
         self.statuses = []
 
     def get_input_sender(
-        self, uid: str, sender_data: dict
+        self, uid: str, sender_data: SenderData
     ) -> InputSender:
         for member in self.members:
             if member.uid == uid:
@@ -43,7 +52,7 @@ class InputAccount:
         return self.create_input_sender(uid, sender_data)
 
     def create_input_sender(
-        self, uid: str, sender_data: dict
+        self, uid: str, sender_data: SenderData
     ) -> InputSender:
         member = InputSender(uid=uid, sender_data=sender_data)
         self.members.append(member)

@@ -1,10 +1,12 @@
-from typing import Optional
+from typing import Dict, Optional
 import os
 
 import requests
 
 
-from yeeko_abc_message_models.request import InputAccount, RequestAbc
+from yeeko_abc_message_models.request import (
+    InputAccount, RequestAbc, SenderData
+)
 from yeeko_abc_message_models.request.message_model import (
     InteractiveMessage, EventMessage, MediaMessage, TextMessage
 )
@@ -58,7 +60,7 @@ def get_file_content(media_id: str, token: str) -> bytes | None:
 class WhatsAppRequest(RequestAbc):
     raw_data: dict
     data: dict
-    _contacts_data: dict
+    _contacts_data: Dict[str, SenderData]
 
     messages_ids: list[str]
 
@@ -105,15 +107,17 @@ class WhatsAppRequest(RequestAbc):
             #   "phone": "5215513375592",
             #   "user_field_filter": "phone"
             # }
-            profile = contact.get("profile")
+            profile = contact.get("profile") or {}
             sender_id = contact.get("wa_id")
-            profile["phone"] = contact.get("wa_id")
-            profile["user_field_filter"] = "phone"
+            profile["phone"] = profile.get("phone") or sender_id
+
             self._contacts_data.setdefault(
-                sender_id, {
-                    "sender_id": sender_id,
-                    "contact": profile
-                }
+                sender_id,  SenderData(
+                    raw_data=profile,
+                    name=profile.get("name"),
+                    email=profile.get("email"),
+                    phone=profile.get("phone"),
+                )
             )
 
     def _set_messages(
@@ -123,11 +127,11 @@ class WhatsAppRequest(RequestAbc):
         messages = value.get("messages", [])
         for message in messages:
             sender_id = message.get("from")
-            member_data = self._contacts_data.get(sender_id, {})
+            member_data = self._contacts_data.get(sender_id)
 
             try:
-                input_sender = input_account\
-                    .get_input_sender(sender_id, member_data)
+                input_sender = input_account.get_input_sender(
+                    sender_id, member_data or SenderData(raw_data={}))
 
             except Exception as e:
                 data_error = {
@@ -238,12 +242,12 @@ class WhatsAppRequest(RequestAbc):
         for status_data in statuses:
             sender_id = status_data.get("recipient_id")
             status_data["type"] = "state"
-            member_data = self._contacts_data.get(sender_id, {})
+            member_data = self._contacts_data.get(sender_id)
             data_error = {"status_data": status_data}
 
             try:
-                input_sender = input_account\
-                    .get_input_sender(sender_id, member_data)
+                input_sender = input_account.get_input_sender(
+                    sender_id, member_data or SenderData(raw_data={}))
 
             except Exception as e:
                 self.add_error(
