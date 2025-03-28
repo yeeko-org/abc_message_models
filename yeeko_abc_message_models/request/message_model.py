@@ -1,7 +1,7 @@
 import time
 
 from pydantic import BaseModel
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 
 class MessageBase(BaseModel):
@@ -36,15 +36,24 @@ class EventMessage(MessageBase):
     emoji: Optional[str]
 
 
+class MultimediaMessage(BaseModel):
+    media_type: str
+    media_url: str
+    media_content: Any | None = None
+
+
 class MediaMessage(MessageBase):
     media_type: str
-    mime_type: str
-    sha256: str
-    media_id: str
+    mime_type: str | None = None
+    sha256: str | None = None
+    media_id: str | None = None
 
     caption: str | None = None
     filename: str | None = None
     voice: bool | None = None
 
+    url: str | None = None
     origin_name: str | None = None
     origin_content: Any | None = None
+
+    multimedia: List[MultimediaMessage] | None = None
